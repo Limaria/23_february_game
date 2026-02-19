@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta charset="UTF-8">
+   <title>Lost In Winter - Forest</title>
+   <style>
+      body {
+         margin: 0;
+         overflow: hidden;
+         background: black;
+         font-family: sans-serif;
+      }
+
+      #ui {
+         position: fixed;
+         width: 100%;
+         height: 100%;
+         pointer-events: none;
+      }
+
+      #frost {
+         position: fixed;
+         inset: 0;
+         pointer-events: none;
+         background: radial-gradient(circle at center,
+               rgba(255, 255, 255, 0) 40%,
+               rgba(200, 220, 255, 0.15) 65%,
+               rgba(180, 220, 255, 0.3) 100%);
+         opacity: 0;
+         transition: opacity 2s;
+      }
+
+      /* =============================
+         СТАРТОВЫЙ ЭКРАН
+      ============================= */
+      #startScreen {
+         position: fixed;
+         inset: 0;
+         background: radial-gradient(circle at center, #000814 0%, #000 100%);
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         z-index: 10000;
+         color: white;
+         text-align: center;
+         font-family: sans-serif;
+      }
+
+      #startContent h1 {
+         font-size: 50px;
+         margin-bottom: 20px;
+         letter-spacing: 3px;
+      }
+
+      #startContent p {
+         font-size: 22px;
+         margin-bottom: 40px;
+         opacity: 0.8;
+      }
+
+      #startButton {
+         padding: 15px 40px;
+         font-size: 20px;
+         border: none;
+         border-radius: 10px;
+         background: #111;
+         color: white;
+         cursor: pointer;
+         transition: 0.3s;
+         box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      }
+
+      #startButton:hover {
+         background: #222;
+         transform: scale(1.05);
+         box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+      }
+
+      .joystick {
+         position: absolute;
+         bottom: 40px;
+         left: 40px;
+         width: 120px;
+         height: 120px;
+         border-radius: 50%;
+         background: rgba(255, 255, 255, 0.08);
+         pointer-events: auto;
+      }
+
+      .knob {
+         position: absolute;
+         width: 60px;
+         height: 60px;
+         border-radius: 50%;
+         background: rgba(255, 255, 255, 0.4);
+         left: 30px;
+         top: 30px;
+      }
+
+      #arrow {
+         position: absolute;
+         top: 30px;
+         left: 50%;
+         transform: translateX(-50%);
+         font-size: 40px;
+         color: white;
+         opacity: 0.7;
+      }
+
+      #noteCounter {
+         position: absolute;
+         top: 20px;
+         right: 20px;
+         font-size: 20px;
+         color: white;
+         background: rgba(0, 0, 0, 0.5);
+         padding: 8px 12px;
+         border-radius: 8px;
+         pointer-events: none;
+      }
+
+      #panelGame,
+      #noteModal {
+         position: fixed;
+         inset: 0;
+         background: #0d0d0d;
+         display: none;
+         z-index: 10;
+      }
+
+      #miniContainer {
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         transform: translate(-50%, -50%);
+         width: 350px;
+         height: 300px;
+         background: #111;
+         border-radius: 15px;
+         padding: 20px;
+      }
+
+      #noteModalContent {
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         transform: translate(-50%, -50%);
+         width: 300px;
+         background: #222;
+         padding: 20px;
+         border-radius: 15px;
+         color: white;
+         text-align: center;
+      }
+
+      #noteModal button {
+         margin-top: 15px;
+         padding: 8px 12px;
+         border: none;
+         border-radius: 8px;
+         background: #555;
+         color: white;
+         font-size: 16px;
+      }
+   </style>
+</head>
+
+<!-- =============================
+     ЗВУКИ
+============================= -->
+
+<!-- Зимний ветер -->
+<audio id="windSound" loop preload="auto" src="sound/Звук вихря снега в темное время суток.mp3"></audio>
+
+<!-- Жуткая атмосфера -->
+<audio id="horrorMusic" loop preload="auto" src="sound/Звук мрачной пустоты и угрозы.mp3"></audio>
+
+<!-- Случайный страшный звук -->
+<audio id="scareSound" preload="auto" src="sound/Страшный звук с эффектом.mp3"></audio>
+
+<!-- Победа -->
+<audio id="victorySound" preload="auto" src="sound/Битва закончилась у нас есть игрок который выиграл.mp3"></audio>
+
+<!-- Праздничная музыка -->
+<audio id="celebrationMusic" loop preload="auto" src="sound/Праздничная музыка минусовка.mp3"></audio>
+
+<!-- Салют -->
+<audio id="fireworkSound" preload="auto" src="sound/Звук салюта на SMS.mp3"></audio>
+
+<body>
+   <div id="startScreen">
+      <div id="startContent">
+         <h1>АЙХАЛЬСКИЙ ХОРРОР</h1>
+         <p>попробуй выжить, путник</p>
+         <button id="startButton">СТАРТ</button>
+      </div>
+   </div>
+
+   <div id="panelGame">
+      <div id="miniContainer"></div>
+   </div>
+
+   <div id="noteModal">
+      <div id="noteModalContent">
+         <div id="noteText">Текст записки</div>
+         <button id="closeNote">Закрыть</button>
+      </div>
+   </div>
+
+   <div id="noteCounter">Записки: 0 / 5</div>
+
+   <div id="ui">
+      <div id="arrow">↑</div>
+      <div class="joystick" id="joystick">
+         <div class="knob" id="knob"></div>
+      </div>
+   </div>
+   <div id="frost"></div>
+
+   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+   <script>
+      let frost = document.getElementById("frost");
+      let coldLevel = 0;
+      let snowPiles = [];
+      let treeSnowTops = [];
+      let isSpring = false;
+      let miniGameActive = false;
+      let panelSolved = false;
+
+      // =============================
+      // ЗВУКОВАЯ СИСТЕМА
+      // =============================
+      const windSound = document.getElementById("windSound");
+      const horrorMusic = document.getElementById("horrorMusic");
+      const scareSound = document.getElementById("scareSound");
+      const victorySound = document.getElementById("victorySound");
+      const celebrationMusic = document.getElementById("celebrationMusic");
+      const fireworkSound = document.getElementById("fireworkSound");
+
+      windSound.volume = 0.1;
+      horrorMusic.volume = 0.4;
+      celebrationMusic.volume = 0.6;
+
+      function startHorrorAudio() {
+         windSound.play();
+         horrorMusic.play();
+         startRandomScares();
+      }
+
+      function stopHorrorAudio() {
+         windSound.pause();
+         horrorMusic.pause();
+      }
+
+      function startCelebrationAudio() {
+         victorySound.play();
+         celebrationMusic.play();
+      }
+
+      function startRandomScares() {
+         function randomScare() {
+            if (isSpring) return;
+
+            let delay = 5000 + Math.random() * 15000;
+
+            setTimeout(() => {
+               scareSound.currentTime = 0;
+               scareSound.volume = 0.7 + Math.random() * 0.3;
+               scareSound.play();
+               randomScare();
+            }, delay);
+         }
+
+         randomScare();
+      }
+
+
+      // ----------------------------
+      // СЦЕНА
+      // ----------------------------
+      let scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x000814, 15, 120);
+
+      let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+      camera.position.set(0, 1.6, 0);
+
+      let renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0x404060));
+      let moon = new THREE.DirectionalLight(0x99ccff, 0.6);
+      moon.position.set(30, 50, 30);
+      scene.add(moon);
+
+      // ----------------------------
+      // СНЕЖНЫЙ ПОКРОВ ЗЕМЛИ
+      // ----------------------------
+      let ground = new THREE.Mesh(
+         new THREE.PlaneGeometry(400, 400),
+         new THREE.MeshStandardMaterial({
+            color: 0xf0f6ff,
+            roughness: 1,
+            metalness: 0
+         })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground);
+
+      // ----------------------------
+      // СЛЕДЫ ИГРОКА
+      // ----------------------------
+      let footprints = [];
+      let lastFootprintPos = new THREE.Vector3();
+      let footprintDistance = 1.2;
+
+      function createFootprint(x, z) {
+         let print = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.4, 0.8),
+            new THREE.MeshStandardMaterial({
+               color: 0xdfe9f5,
+               transparent: true,
+               opacity: 0.6,
+               side: THREE.DoubleSide
+            })
+         );
+
+         print.rotation.x = -Math.PI / 2;
+         print.position.set(x, 0.05, z);
+
+         scene.add(print);
+         footprints.push(print);
+
+         // ограничим количество следов
+         if (footprints.length > 200) {
+            scene.remove(footprints[0]);
+            footprints.shift();
+         }
+      }
+
+      // ----------------------------
+      // ДЕРЕВЬЯ — ГУСТОЙ ЛЕС
+      // ----------------------------
+      let trees = [];
+      let colliders = [];
+      let mapLimit = 150;
+      let treeRadius = 150;
+
+      function createTree(x, z) {
+         let group = new THREE.Group();
+         let trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.3, 2),
+            new THREE.MeshStandardMaterial({ color: 0x5a3d1e })
+         );
+         trunk.position.y = 1;
+         group.add(trunk);
+
+         let leaves = new THREE.Mesh(
+            new THREE.ConeGeometry(1.5, 4, 8),
+            new THREE.MeshStandardMaterial({ color: 0x0a2a0a })
+         );
+         leaves.position.y = 4;
+         group.add(leaves);
+
+         let snowTop = new THREE.Mesh(
+            new THREE.ConeGeometry(1.6, 1.5, 8),
+            new THREE.MeshStandardMaterial({
+               color: 0xffffff,
+               roughness: 1
+            })
+         );
+         snowTop.position.y = 5.5;
+         group.add(snowTop);
+         treeSnowTops.push(snowTop);
+
+         group.position.set(x, 0, z);
+         scene.add(group);
+         trees.push(group);
+         colliders.push({
+            x: x,
+            z: z,
+            radius: 1.5
+         });
+      }
+
+      for (let i = 0; i < 1000; i++) {
+         let x = (Math.random() - 0.5) * treeRadius * 2;
+         let z = (Math.random() - 0.5) * treeRadius * 2;
+         createTree(x, z);
+      }
+
+      // ----------------------------
+      // СУГРОБЫ
+      // ----------------------------
+      function createSnowPile(x, z) {
+         let pile = new THREE.Mesh(
+            new THREE.SphereGeometry(Math.random() * 2 + 1, 16, 16),
+            new THREE.MeshStandardMaterial({
+               color: 0xffffff,
+               roughness: 1
+            })
+         );
+         pile.scale.y = 0.5;
+         pile.position.set(x, 0.5, z);
+         scene.add(pile);
+
+         snowPiles.push(pile);
+      }
+
+      for (let i = 0; i < 120; i++) {
+         let x = (Math.random() - 0.5) * treeRadius * 2;
+         let z = (Math.random() - 0.5) * treeRadius * 2;
+         createSnowPile(x, z);
+      }
+
+      // ----------------------------
+      // ЩИТОК
+      // ----------------------------
+      let panelGroup = new THREE.Group();
+      let body = new THREE.Mesh(
+         new THREE.BoxGeometry(3, 4, 1),
+         new THREE.MeshStandardMaterial({ color: 0x222222 })
+      );
+      panelGroup.add(body);
+      let panelRadius = mapLimit * 0.6;
+      let angle = Math.random() * Math.PI * 2;
+
+      let px = Math.cos(angle) * panelRadius;
+      let pz = Math.sin(angle) * panelRadius;
+
+      panelGroup.position.set(px, 0, pz);
+
+      scene.add(panelGroup);
+      colliders.push(panelGroup);
+
+      let glowLight = new THREE.PointLight(0x99ccff, 1, 15);
+      glowLight.position.set(0, 2, 1);
+      panelGroup.add(glowLight);
+
+
+
+      // ----------------------------
+      // УЛУЧШЕННЫЙ СНЕГ (3 слоя)
+      // ----------------------------
+      function createSnowLayer(count, size, area, speed) {
+         let geo = new THREE.BufferGeometry();
+         let verts = [];
+
+         for (let i = 0; i < count; i++) {
+            verts.push(
+               (Math.random() - 0.5) * area,
+               Math.random() * 80,
+               (Math.random() - 0.5) * area
+            );
+         }
+
+         geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+
+         let mat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: size,
+            transparent: true,
+            opacity: 0.8
+         });
+
+         let snow = new THREE.Points(geo, mat);
+         snow.userData.speed = speed;
+         scene.add(snow);
+         return snow;
+      }
+
+      let snowLayers = [
+         createSnowLayer(6000, 0.15, 250, 0.15),  // дальний
+         createSnowLayer(4000, 0.25, 200, 0.25),  // средний
+         createSnowLayer(2000, 0.4, 150, 0.4)     // ближний
+      ];
+
+      // ----------------------------
+      // СНЕЖНАЯ СТЕНА ПО КРАЯМ
+      // ----------------------------
+      let wallHeight = 25;
+      let wallGeo = new THREE.CylinderGeometry(mapLimit + 5, mapLimit + 5, wallHeight, 64, 1, true);
+      let wallMat = new THREE.MeshStandardMaterial({
+         color: 0xe6f2ff,
+         transparent: true,
+         opacity: 0.25,
+         side: THREE.BackSide
+      });
+
+      let snowWall = new THREE.Mesh(wallGeo, wallMat);
+      snowWall.position.y = wallHeight / 2;
+      scene.add(snowWall);
+
+      // ----------------------------
+      // ЗАПИСКИ
+      // ----------------------------
+      let notes = [];
+      let collectedNotes = [];
+      let notesCollected = 0;
+      const notePositions = [
+         {
+            x: 20, z: -30, text: "Сначала дай остыть металлу —\nПусть синий ток пройдёт по жилам вяло.\nЗатем впусти горячий пульс во тьму —\nАлый разбудит спящий шум.\nИ только после — замыкай травой,\nЗелёный контур станет стеной."
+         },
+         {
+            x: -40, z: 50, text: "Соедини сперва живую нить —\nЗелёный должен цепь хранить.\nПотом вруби сердечный жар —\nПусть алый даст системе удар.\nИ если дрожь пойдёт по стенам —\nВеди во тьму черного тлена."
+         },
+         {
+            x: 70, z: 20, text: "Лучом жёлтым разрежь покой —\nОн первый тронет узел твой.\nНо не держи его один —\nВеди в зелёный, в глубь машин.\nИ чтоб не вспыхнул весь отсек —\nСиним остуди финальный бег."
+         },
+         { x: -60, z: -60, text: "Белым очисти старый след —\nСбрось прежний ток, сотри ответ.\nПотом пусти по венам жар —\nАлый замкнёт начальный дар.\nИ если слышишь гул в стене —\nЧёрным гаси.Веди к земле." },
+         { x: 100, z: 80, text: "Не путай порядок. Пульс — сперва.\nАлый даёт системе права.\nЗатем найди зелёный шов —\nОн держит цепь без лишних слов.\nИ лишь когда стихает звон —\nСиним закрой последний трон." }
+      ];
+
+      notePositions.forEach(n => {
+         // --- ЗАПИСКА ---
+         let noteGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
+         let noteMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+         let noteMesh = new THREE.Mesh(noteGeo, noteMat);
+         noteMesh.position.set(n.x, 0.15, n.z);
+         scene.add(noteMesh);
+
+         // --- ФОНАРИК РЯДОМ ---
+         let offsetAngle = Math.random() * Math.PI * 2;
+         let offsetDist = 2.5;
+
+         let lx = n.x + Math.cos(offsetAngle) * offsetDist;
+         let lz = n.z + Math.sin(offsetAngle) * offsetDist;
+
+         // столб
+         let pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.1, 4),
+            new THREE.MeshStandardMaterial({ color: 0x555555 })
+         );
+         pole.position.set(lx, 2, lz);
+         scene.add(pole);
+
+         // лампа
+         let bulb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3),
+            new THREE.MeshStandardMaterial({
+               emissive: 0xffaa55,
+               emissiveIntensity: 1
+            })
+         );
+         bulb.position.set(lx, 4, lz);
+         scene.add(bulb);
+
+         // свет
+         let light = new THREE.PointLight(0xffcc88, 2, 18);
+         light.position.set(lx, 4, lz);
+         scene.add(light);
+
+         notes.push({
+            mesh: noteMesh,
+            text: n.text,
+            collected: false,
+            lampLight: light
+         });
+      });
+
+      // ----------------------------
+      // УПРАВЛЕНИЕ
+      // ----------------------------
+      let yaw = 0, moveX = 0, moveZ = 0, gameActive = true;
+
+      let joystick = document.getElementById("joystick");
+      let knob = document.getElementById("knob");
+
+      joystick.addEventListener("touchmove", e => {
+         if (gameActive) return;
+         let rect = joystick.getBoundingClientRect();
+         let x = e.touches[0].clientX - rect.left - 60;
+         let y = e.touches[0].clientY - rect.top - 60;
+         let dist = Math.min(Math.sqrt(x * x + y * y), 40);
+         let angle = Math.atan2(y, x);
+         knob.style.left = 60 + Math.cos(angle) * dist - 30 + "px";
+         knob.style.top = 60 + Math.sin(angle) * dist - 30 + "px";
+         moveX = Math.cos(angle) * dist / 40;
+         moveZ = Math.sin(angle) * dist / 40;
+      });
+      joystick.addEventListener("touchend", () => {
+         knob.style.left = "30px";
+         knob.style.top = "30px";
+         moveX = 0; moveZ = 0;
+      });
+
+      // ----------------------------
+      // ВРАЩЕНИЕ КАМЕРЫ ПАЛЬЦЕМ (ТОЛЬКО ГОРИЗОНТАЛЬНО)
+      // ----------------------------
+      let isPointerDown = false;
+      let lastX = 0;
+
+      document.addEventListener('touchstart', e => {
+         if (e.touches.length === 1) {
+            isPointerDown = true;
+            lastX = e.touches[0].clientX;
+         }
+      });
+
+      document.addEventListener('touchend', () => { isPointerDown = false; });
+
+      document.addEventListener('touchmove', e => {
+         if (!isPointerDown || e.touches.length !== 1) return;
+         let dx = e.touches[0].clientX - lastX;
+         yaw -= dx * 0.002;
+         lastX = e.touches[0].clientX;
+      });
+
+      // ----------------------------
+      // СТРЕЛКА НАВИГАЦИИ
+      // ----------------------------
+      let arrow = document.getElementById("arrow");
+      function updateArrow() {
+         let closest = null;
+         let minDist = Infinity;
+
+         notes.forEach(n => {
+            if (!n.collected) {
+               let d = camera.position.distanceTo(n.mesh.position);
+               if (d < minDist) {
+                  minDist = d;
+                  closest = n;
+               }
+            }
+         });
+
+         let target = closest ? closest.mesh.position : panelGroup.position;
+
+         let dir = new THREE.Vector3().subVectors(target, camera.position);
+         let angle = Math.atan2(dir.x, dir.z);
+         let relative = angle - yaw;
+         arrow.style.transform = `translateX(-50%) rotate(${relative}rad)`;
+      }
+
+      // ----------------------------
+      // МИНИ-ИГРА: СОЕДИНИ ПРОВОДА
+      // ----------------------------
+      const panelGame = document.getElementById("panelGame");
+      const miniContainer = document.getElementById("miniContainer");
+
+      let selectedWire = null;
+      let connections = 0;
+
+      function openPanelGame() {
+         if (miniGameActive) return;
+         gameActive = false;       // блокируем движение
+         miniGameActive = true;   // включаем мини-игру
+         panelGame.style.display = "block";
+         startWireGame();
+      }
+
+      function closePanelGame() {
+         panelGame.style.display = "none";
+         gameActive = false;
+      }
+
+
+
+      function startWireGame() {
+         miniContainer.innerHTML = "";
+
+         // ===============================
+         // ФОНАРИКИ МИНИ-ИГРЫ
+         // ===============================
+         let miniGameLamps = [];
+         const lampContainer = document.createElement("div");
+         lampContainer.style.position = "absolute";
+         lampContainer.style.top = "10px";
+         lampContainer.style.right = "10px";
+         lampContainer.style.display = "flex";
+         lampContainer.style.gap = "8px";
+         miniContainer.appendChild(lampContainer);
+
+         for (let i = 0; i < 5; i++) {
+            let lampDiv = document.createElement("div");
+            lampDiv.style.width = "25px";
+            lampDiv.style.height = "25px";
+            lampDiv.style.borderRadius = "50%";
+            lampDiv.style.background = "#222";
+            lampDiv.style.boxShadow = "0 0 5px #000";
+            lampContainer.appendChild(lampDiv);
+            miniGameLamps.push(lampDiv);
+         }
+
+
+         // ===============================
+         // КНОПКА ПОДСКАЗОК
+         // ===============================
+         let hintButton = document.createElement("div");
+         hintButton.innerText = "?";
+         hintButton.style.position = "absolute";
+         hintButton.style.top = "10px";
+         hintButton.style.left = "10px";
+         hintButton.style.width = "45px";
+         hintButton.style.height = "45px";
+         hintButton.style.borderRadius = "50%";
+         hintButton.style.background = "#222";
+         hintButton.style.color = "white";
+         hintButton.style.display = "flex";
+         hintButton.style.alignItems = "center";
+         hintButton.style.justifyContent = "center";
+         hintButton.style.fontSize = "24px";
+         hintButton.style.cursor = "pointer";
+         hintButton.style.zIndex = "100";
+
+         miniContainer.appendChild(hintButton);
+
+         // ===============================
+         // МОДАЛКА
+         // ===============================
+         let hintModal = document.createElement("div");
+         hintModal.style.position = "absolute";
+         hintModal.style.inset = "0";
+         hintModal.style.background = "rgba(0,0,0,0.9)";
+         hintModal.style.display = "none";
+         hintModal.style.flexDirection = "column";
+         hintModal.style.alignItems = "center";
+         hintModal.style.justifyContent = "center";
+         hintModal.style.zIndex = "200";
+
+         miniContainer.appendChild(hintModal);
+
+         let hintContent = document.createElement("div");
+         hintContent.style.width = "80%";
+         hintContent.style.maxWidth = "320px";
+         hintContent.style.minHeight = "150px";
+         hintContent.style.background = "#f5e6a3";
+         hintContent.style.color = "#111";
+         hintContent.style.padding = "20px";
+         hintContent.style.borderRadius = "15px";
+         hintContent.style.textAlign = "center";
+         hintContent.style.fontSize = "16px";
+         hintContent.style.transition = "transform 0.3s ease";
+
+         hintModal.appendChild(hintContent);
+
+         let closeHint = document.createElement("div");
+         closeHint.innerText = "Закрыть";
+         closeHint.style.marginTop = "20px";
+         closeHint.style.color = "white";
+         closeHint.style.cursor = "pointer";
+         hintModal.appendChild(closeHint);
+
+         let currentHintIndex = 0;
+
+         function showHint(index) {
+            if (collectedNotes.length === 0) {
+               hintContent.innerText = "Вы ещё не нашли ни одной записки.";
+               return;
+            }
+
+            index = Math.max(0, Math.min(index, collectedNotes.length - 1));
+            currentHintIndex = index;
+
+            hintContent.style.transform = "scale(0.9)";
+            setTimeout(() => {
+               hintContent.innerText = collectedNotes[currentHintIndex].text;
+               hintContent.style.transform = "scale(1)";
+            }, 100);
+         }
+
+         hintButton.addEventListener("click", () => {
+            hintModal.style.display = "flex";
+            showHint(0);
+         });
+
+         closeHint.addEventListener("click", () => {
+            hintModal.style.display = "none";
+         });
+
+         // свайп
+         let touchStartX = 0;
+
+         hintContent.addEventListener("touchstart", e => {
+            touchStartX = e.touches[0].clientX;
+         });
+
+         hintContent.addEventListener("touchend", e => {
+            let diff = e.changedTouches[0].clientX - touchStartX;
+
+            if (Math.abs(diff) > 50) {
+               if (diff < 0) showHint(currentHintIndex + 1);
+               else showHint(currentHintIndex - 1);
+            }
+         });
+
+         miniContainer.style.display = "flex";
+         miniContainer.style.justifyContent = "center";
+         miniContainer.style.alignItems = "center";
+         miniContainer.style.position = "relative";
+
+         let shownHints = 0;
+
+         let solvedSequences = 0;
+         let currentSequence = [];
+
+         const correctSequences = [
+            ["blue", "red", "green"],
+            ["green", "red", "black"],
+            ["yellow", "green", "blue"],
+            ["white", "red", "black"],
+            ["red", "green", "blue"]
+         ];
+
+         // ===============================
+         // CANVAS
+         // ===============================
+         let canvas = document.createElement("canvas");
+         canvas.width = 360;
+         canvas.height = 240;
+         canvas.style.background = "#0b0b0b";
+         canvas.style.borderRadius = "12px";
+         miniContainer.appendChild(canvas);
+
+         canvas.style.position = "relative";
+         canvas.style.zIndex = "1";
+
+         let ctx = canvas.getContext("2d");
+
+         const colors = ["blue", "red", "green", "yellow", "white", "black"];
+         let nodes = [];
+         let colX = [90, 180, 270];
+         let rowY = [60, 120];
+         let index = 0;
+         for (let r = 0; r < rowY.length; r++) {
+            for (let c = 0; c < colX.length; c++) {
+               if (index >= colors.length) break;
+               nodes.push({ x: colX[c], y: rowY[r], color: colors[index] });
+               index++;
+            }
+         }
+
+         let drawnConnections = [];
+
+         function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawnConnections.forEach(conn => {
+               ctx.strokeStyle = conn.color;
+               ctx.lineWidth = 6;
+               ctx.beginPath();
+               ctx.moveTo(conn.from.x, conn.from.y);
+               ctx.lineTo(conn.to.x, conn.to.y);
+               ctx.stroke();
+            });
+
+            nodes.forEach(node => {
+               ctx.fillStyle = node.color;
+               ctx.beginPath();
+               ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+               ctx.fill();
+
+               ctx.strokeStyle = "#000";
+               ctx.lineWidth = 2;
+               ctx.stroke();
+            });
+         }
+
+         canvas.addEventListener("click", e => {
+            let rect = canvas.getBoundingClientRect();
+            let mx = e.clientX - rect.left;
+            let my = e.clientY - rect.top;
+
+            nodes.forEach(node => {
+               if (Math.hypot(mx - node.x, my - node.y) < 18) {
+                  currentSequence.push(node);
+
+                  if (currentSequence.length === 3) {
+                     let playerSeq = currentSequence.map(n => n.color);
+
+                     let foundIndex = correctSequences.findIndex(seq =>
+                        JSON.stringify(seq) === JSON.stringify(playerSeq)
+                     );
+
+                     if (foundIndex !== -1) {
+                        drawnConnections.push({ color: playerSeq[0], from: currentSequence[0], to: currentSequence[1] });
+                        drawnConnections.push({ color: playerSeq[1], from: currentSequence[1], to: currentSequence[2] });
+
+                        correctSequences.splice(foundIndex, 1);
+                        solvedSequences++;
+
+                        // 🔥 Включаем фонарик
+                        miniGameLamps[solvedSequences - 1].style.background = "#ffcc33";
+                        miniGameLamps[solvedSequences - 1].style.boxShadow = "0 0 15px #ffcc33";
+
+                        if (correctSequences.length === 0) {
+                           setTimeout(() => {
+                              miniGameActive = false;
+                              panelSolved = true;   // ✅ ВАЖНО
+                              miniContainer.innerHTML = "";
+                              panelGame.style.display = "none";
+                              gameActive = false;
+                              startFinalScene();
+                           }, 300);
+                        }
+                     } else {
+                        // ошибка
+                        canvas.style.transform = "translateX(6px)";
+                        setTimeout(() => canvas.style.transform = "translateX(-6px)", 60);
+                        setTimeout(() => canvas.style.transform = "translateX(0px)", 120);
+                     }
+
+                     currentSequence = [];
+                  }
+               }
+            });
+         });
+
+         function animateMini() {
+            if (!miniGameActive) return; // если мини-игра закрыта, останавливаем animate
+            draw();
+            requestAnimationFrame(animateMini);
+         }
+
+         animateMini();
+      }
+
+      // ----------------------------
+      // МОДАЛЬНОЕ ОКНО ЗАПИСОК
+      // ----------------------------
+      const noteModal = document.getElementById("noteModal");
+      const noteText = document.getElementById("noteText");
+      const closeNote = document.getElementById("closeNote");
+
+      closeNote.addEventListener("click", () => { noteModal.style.display = "none"; });
+
+      const noteCounter = document.getElementById("noteCounter");
+      function updateNoteCounter() {
+         noteCounter.innerText = `Записки: ${notesCollected} / 5`;
+      }
+
+      // ----------------------------
+      // КОЛЛИЗИЯ С ОБЪЕКТАМИ
+      // ----------------------------
+      function checkCollision(pos) {
+
+         // круглая граница карты
+         let distFromCenter = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+         if (distFromCenter > mapLimit - 2) return true;
+
+         // столкновения с деревьями
+         for (let c of colliders) {
+            let dx = pos.x - c.x;
+            let dz = pos.z - c.z;
+            if (Math.sqrt(dx * dx + dz * dz) < c.radius + 0.5) {
+               return true;
+            }
+         }
+
+         return false;
+      }
+
+      function startFinalScene() {
+
+         isSpring = true;
+         gameActive = true; // блокируем движение
+
+         stopHorrorAudio();
+         startCelebrationAudio();
+
+         // Убираем снег
+         snowLayers.forEach(layer => scene.remove(layer));
+         frost.style.opacity = 0;
+
+         // Постепенный переход света
+         scene.fog.color.set(0xbfdfff);
+         scene.fog.near = 50;
+         scene.fog.far = 400;
+         renderer.setClearColor(0x87ceeb);
+
+         scene.remove(moon);
+
+         let glow = new THREE.PointLight(0xffcc55, 5, 300);
+         glow.position.set(0, 80, -50);
+         scene.add(glow);
+
+         arrow.style.display = "none";
+         document.getElementById("ui").style.display = "none";
+         noteCounter.style.display = "none";
+
+         let sun = new THREE.DirectionalLight(0xffffff, 2);
+         sun.position.set(50, 100, 50);
+         scene.add(sun);
+         scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+         ground.material.color.set(0x3cb043);
+
+         treeSnowTops.forEach(snow => snow.visible = false);
+
+         snowPiles.forEach(pile => scene.remove(pile));
+
+         // ✨ ВСПЫШКА ОЗАРЕНИЯ
+         let flash = document.createElement("div");
+         flash.style.position = "fixed";
+         flash.style.inset = "0";
+         flash.style.background = "white";
+         flash.style.opacity = "0";
+         flash.style.pointerEvents = "none";
+         flash.style.transition = "opacity 1.5s";
+         document.body.appendChild(flash);
+
+         let finalTime = 0;
+
+         function animateFinalCamera() {
+            finalTime += 0.01;
+
+            camera.position.y = 5 + finalTime * 20;
+            camera.position.x *= 0.995;
+            camera.position.z *= 0.995;
+
+            camera.lookAt(0, 30, -80);
+
+            if (finalTime < 4) {
+               requestAnimationFrame(animateFinalCamera);
+            }
+         }
+
+         let transition = 0;
+
+         function animateSeasonChange() {
+            transition += 0.01;
+
+            ground.material.color.lerp(
+               new THREE.Color(0x3cb043),
+               transition
+            );
+
+            trees.forEach(tree => {
+               tree.children[1].material.color.lerp(
+                  new THREE.Color(0x2ecc40),
+                  transition
+               );
+            });
+
+            if (transition < 1) {
+               requestAnimationFrame(animateSeasonChange);
+            }
+         }
+
+         animateSeasonChange();
+
+         setTimeout(() => {
+            animateFinalCamera();
+         }, 2000);
+
+         setTimeout(() => flash.style.opacity = "1", 100);
+         setTimeout(() => flash.style.opacity = "0", 1800);
+
+         // 🎥 Камера смотрит в небо
+         setTimeout(() => {
+            // немного приподнимаем камеру
+            camera.position.y = 5;
+         }, 2000);
+
+         // ☁ Облака
+         setTimeout(() => {
+            createFinalSkyScene();
+         }, 2500);
+
+         // 🎆 Фейерверки
+         setTimeout(() => {
+            startFireworks();
+         }, 5000);
+
+         // 🐦 Птицы
+         setTimeout(() => {
+            spawnBirds();
+         }, 4500);
+
+         setTimeout(() => {
+
+            let finalText = document.createElement("div");
+            finalText.innerHTML = `
+      <div style="font-size:40px; letter-spacing:3px;">
+         поздравляем
+      </div>
+      <div style="font-size:90px; font-weight:bold; margin:10px 0;">
+         С 23 ФЕВРАЛЯ
+      </div>
+      <div style="font-size:50px; letter-spacing:4px;">
+         БОРЦЫ С ТЬМОЙ
+      </div>
+   `;
+
+            finalText.style.position = "fixed";
+            finalText.style.top = "50%";
+            finalText.style.left = "50%";
+            finalText.style.transform = "translate(-50%, -50%) scale(0)";
+            finalText.style.textAlign = "center";
+            finalText.style.color = "white";
+            finalText.style.textShadow = "0 0 40px orange";
+            finalText.style.transition = "transform 1.5s ease";
+            finalText.style.zIndex = "9999";
+            finalText.style.fontFamily = "sans-serif";
+
+            document.body.appendChild(finalText);
+
+            setTimeout(() => {
+               finalText.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 100);
+
+         }, 3000);
+      }
+
+      function createFinalSkyScene() {
+
+         const loader = new THREE.FontLoader();
+
+         loader.load(
+            'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
+            function (font) {
+
+               const geometry = new THREE.TextGeometry(
+                  "С 23 ФЕВРАЛЯ!",
+                  {
+                     font: font,
+                     size: 25,      // ЕЩЁ БОЛЬШЕ
+                     height: 5,
+                     curveSegments: 12
+                  }
+               );
+
+               geometry.computeBoundingBox();
+               const width =
+                  geometry.boundingBox.max.x -
+                  geometry.boundingBox.min.x;
+
+               const material = new THREE.MeshStandardMaterial({
+                  color: 0xffffff,
+                  emissive: 0xffaa00,
+                  emissiveIntensity: 4,
+                  metalness: 0.4,
+                  roughness: 0.3
+               });
+
+               const textMesh = new THREE.Mesh(geometry, material);
+
+               // Центрируем
+               textMesh.position.x = -width / 2;
+
+               // 👇 СТАВИМ ПРЯМО ПО ЦЕНТРУ КАМЕРЫ
+               textMesh.position.set(-width / 2, 0, -120);
+
+               // ВАЖНО
+               textMesh.frustumCulled = false;
+
+               camera.add(textMesh);
+
+               // Пульсация
+               function pulse() {
+                  material.emissiveIntensity =
+                     3 + Math.sin(Date.now() * 0.003) * 2;
+                  requestAnimationFrame(pulse);
+               }
+
+               pulse();
+            }
+         );
+      }
+
+
+      function startFireworks() {
+
+         function createExplosion(x, y, z) {
+
+            let count = 250;
+            let geometry = new THREE.BufferGeometry();
+            let vertices = [];
+
+            for (let i = 0; i < count; i++) {
+               vertices.push(0, 0, 0);
+            }
+
+            geometry.setAttribute(
+               'position',
+               new THREE.Float32BufferAttribute(vertices, 3)
+            );
+
+            let material = new THREE.PointsMaterial({
+               color: new THREE.Color(
+                  Math.random(),
+                  Math.random(),
+                  Math.random()
+               ),
+               size: 0.8,
+               transparent: true,
+               opacity: 1
+            });
+
+            let points = new THREE.Points(geometry, material);
+            points.position.set(x, y, z);
+            scene.add(points);
+
+            let speeds = [];
+
+            for (let i = 0; i < count; i++) {
+               speeds.push({
+                  x: (Math.random() - 0.5) * 3,
+                  y: (Math.random() - 0.5) * 3,
+                  z: (Math.random() - 0.5) * 3
+               });
+            }
+
+            function animateExplosion() {
+
+               let pos = geometry.attributes.position.array;
+
+               for (let i = 0; i < count; i++) {
+                  pos[i * 3] += speeds[i].x;
+                  pos[i * 3 + 1] += speeds[i].y;
+                  pos[i * 3 + 2] += speeds[i].z;
+               }
+
+               geometry.attributes.position.needsUpdate = true;
+
+               material.opacity -= 0.015;
+
+               if (material.opacity > 0) {
+                  requestAnimationFrame(animateExplosion);
+               } else {
+                  scene.remove(points);
+               }
+            }
+
+            animateExplosion();
+         }
+
+         // 💥 Салюты по всей карте
+         setInterval(() => {
+
+            for (let i = 0; i < 3; i++) {
+
+               let x = (Math.random() - 0.5) * mapLimit * 1.5;
+               let y = 60 + Math.random() * 40;
+               let z = (Math.random() - 0.5) * mapLimit * 1.5;
+               fireworkSound.currentTime = 0;
+               fireworkSound.play();
+               createExplosion(x, y, z);
+            }
+
+         }, 900);
+      }
+      function spawnBirds() {
+
+         let birds = [];
+
+         for (let i = 0; i < 8; i++) {
+            let bird = new THREE.Mesh(
+               new THREE.ConeGeometry(0.5, 1.5, 3),
+               new THREE.MeshStandardMaterial({ color: 0x222222 })
+            );
+
+            bird.rotation.x = Math.PI / 2;
+            bird.position.set(-60, 65 + Math.random() * 10, -120);
+            scene.add(bird);
+            birds.push(bird);
+         }
+
+         function animateBirds() {
+            birds.forEach(bird => {
+               bird.position.x += 0.5;
+            });
+
+            requestAnimationFrame(animateBirds);
+         }
+
+         animateBirds();
+      }
+
+      function createSkyText() {
+
+         const loader = new THREE.FontLoader();
+
+         loader.load(
+            'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
+            function (font) {
+
+               const geometry = new THREE.TextGeometry(
+                  "С 23 февраля!",
+                  {
+                     font: font,
+                     size: 5,
+                     height: 1,
+                     curveSegments: 12
+                  }
+               );
+
+               const material = new THREE.MeshStandardMaterial({
+                  color: 0xffffff,
+                  emissive: 0x00ccff,
+                  emissiveIntensity: 0.5
+               });
+
+               const textMesh = new THREE.Mesh(geometry, material);
+
+               geometry.computeBoundingBox();
+               const width = geometry.boundingBox.max.x - geometry.boundingBox.min.x;
+
+               textMesh.position.set(-width / 2, 40, -80);
+
+               scene.add(textMesh);
+            }
+         );
+      }
+
+      // =============================
+      // СТАРТ ИГРЫ
+      // =============================
+      const startScreen = document.getElementById("startScreen");
+      const startButton = document.getElementById("startButton");
+
+      startButton.addEventListener("click", () => {
+         startScreen.style.opacity = "0";
+         startScreen.style.transition = "opacity 1.5s";
+
+         setTimeout(() => {
+            startScreen.style.display = "none";
+            gameActive = false;
+
+            // 🔊 Запуск жуткой атмосферы
+            startHorrorAudio();
+         }, 1500);
+      });
+
+
+      // ----------------------------
+      // АНИМАЦИЯ
+      // ----------------------------
+      function animate() {
+         coldLevel += 0.0005;
+         coldLevel = Math.min(coldLevel, 1);
+         frost.style.opacity = coldLevel;
+
+         requestAnimationFrame(animate);
+         if (!isSpring) {
+            camera.position.y = 1.6;
+         }
+
+         if (!gameActive) {
+            let forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+            let right = new THREE.Vector3(forward.z, 0, -forward.x);
+            let nextPos = camera.position.clone();
+            nextPos.add(forward.clone().multiplyScalar(moveZ * 0.15));
+            nextPos.add(right.clone().multiplyScalar(moveX * 0.15));
+
+            nextPos.x = Math.max(-mapLimit, Math.min(mapLimit, nextPos.x));
+            nextPos.z = Math.max(-mapLimit, Math.min(mapLimit, nextPos.z));
+
+            if (!checkCollision(nextPos)) {
+               camera.position.copy(nextPos);
+
+               if (camera.position.distanceTo(lastFootprintPos) > footprintDistance) {
+                  createFootprint(camera.position.x, camera.position.z);
+                  lastFootprintPos.copy(camera.position);
+               }
+            }
+
+            camera.rotation.set(0, yaw, 0);
+
+            let edgeDist = Math.max(
+               Math.abs(camera.position.x),
+               Math.abs(camera.position.z)
+            );
+
+            if (edgeDist > mapLimit - 20) {
+               scene.fog.far = 60;
+            } else {
+               scene.fog.far = 120;
+            }
+
+            // Проверка подхода к запискам по горизонтали
+            notes.forEach(n => {
+               if (!n.collected) {
+                  let dx = camera.position.x - n.mesh.position.x;
+                  let dz = camera.position.z - n.mesh.position.z;
+                  let distance = Math.sqrt(dx * dx + dz * dz);
+                  if (distance < 1.2) {
+                     noteModal.style.display = "block";
+                     noteText.innerText = n.text;
+                     n.collected = true;
+                     scene.remove(n.mesh);
+
+                     // добавляем в массив собранных
+                     collectedNotes.push(n);
+
+                     notesCollected++;
+                     updateNoteCounter();
+                  }
+               }
+            });
+         }
+
+         // снег
+         if (!isSpring) {
+            snowLayers.forEach(layer => {
+               let pos = layer.geometry.attributes.position.array;
+               for (let i = 1; i < pos.length; i += 3) {
+                  pos[i] -= layer.userData.speed;
+                  if (pos[i] < 0) pos[i] = 80;
+               }
+               layer.geometry.attributes.position.needsUpdate = true;
+            });
+         }
+
+         notes.forEach(n => {
+            if (n.lampLight && !n.collected) {
+               n.lampLight.intensity =
+                  1.8 + Math.sin(Date.now() * 0.004 + n.mesh.position.x) * 0.3;
+            }
+         });
+
+         // проверка подхода к щитку
+         let dxPanel = camera.position.x - panelGroup.position.x;
+         let dzPanel = camera.position.z - panelGroup.position.z;
+         let panelDist = Math.sqrt(dxPanel * dxPanel + dzPanel * dzPanel);
+
+         if (panelDist < 2 && notesCollected === 5 && !gameActive && !panelSolved) {
+            openPanelGame();
+         }
+
+         glowLight.intensity = 0.8 + Math.sin(Date.now() * 0.005) * 0.4;
+
+         updateArrow();
+         renderer.render(scene, camera);
+      }
+      animate();
+   </script>
+</body>
+
+</html>
